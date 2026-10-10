@@ -1,0 +1,11 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="GoveeSmartDashboard.App">
+  <Application.Styles>
+    <FluentTheme />
+    <Style Selector="Window"><Setter Property="Background" Value="#0D1117"/></Style>
+    <Style Selector="Button.primary"><Setter Property="Background" Value="#238636"/><Setter Property="Foreground" Value="White"/><Setter Property="Padding" Value="18,10"/></Style>
+    <Style Selector="Button.danger"><Setter Property="Background" Value="#B62324"/><Setter Property="Foreground" Value="White"/><Setter Property="Padding" Value="18,10"/></Style>
+    <Style Selector="Border.card"><Setter Property="Background" Value="#161B22"/><Setter Property="CornerRadius" Value="14"/><Setter Property="Padding" Value="20"/><Setter Property="Margin" Value="0,0,0,14"/></Style>
+  </Application.Styles>
+</Application>
