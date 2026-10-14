@@ -2,7 +2,7 @@ using Avalonia.Data.Converters;
 using Avalonia.Media;
 using System.Globalization;
 
-namespace GoveeSmartDashboard.Views;
+namespace GoVeeSmartDashboard.Views;
 
 public sealed class BoolToBrushConverter : IValueConverter
 {

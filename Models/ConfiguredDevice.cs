@@ -4,11 +4,11 @@ namespace GoVeeSmartDashboard.Models;
 
 public partial class ConfiguredDevice : ObservableObject
 {
-    [ObservableProperty] private string name = "";
-    [ObservableProperty] private string model = "";
-    [ObservableProperty] private DeviceTransport transport = DeviceTransport.Rest;
-    [ObservableProperty] private string deviceId = "";
-    [ObservableProperty] private bool enabled = true;
+    [ObservableProperty] public partial string Name  { get; set; } = "";
+    [ObservableProperty] public partial string Model { get; set; } = "";
+    [ObservableProperty] public partial DeviceTransport Transport { get; set; } = DeviceTransport.Rest;
+    [ObservableProperty] public partial string DeviceId { get; set; } = "";
+    [ObservableProperty] public partial bool Enabled { get; set; } = true;
 
     public string TransportDisplay => Transport == DeviceTransport.Rest ? "REST" : "Bluetooth LE";
     public string TransportName
@@ -18,7 +18,7 @@ public partial class ConfiguredDevice : ObservableObject
         {
             Transport = value.Equals("Bluetooth", StringComparison.OrdinalIgnoreCase)
                 ? DeviceTransport.Bluetooth : DeviceTransport.Rest;
-            OnPropertyChanged(nameof(TransportName));
+            OnPropertyChanged();
             OnPropertyChanged(nameof(TransportDisplay));
         }
     }

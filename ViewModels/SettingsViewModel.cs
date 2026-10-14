@@ -5,9 +5,8 @@ using System.Collections.ObjectModel;
 
 namespace GoVeeSmartDashboard.ViewModels;
 
-public partial class SettingsViewModel : ObservableObject
+public partial class SettingsViewModel(Func<Task> save) : ObservableObject
 {
-    private readonly Func<Task> _save;
     [ObservableProperty] private string apiKey = "";
     [ObservableProperty] private int pollingIntervalSeconds = 15;
     [ObservableProperty] private double lowTempLimit = 60.0;
@@ -15,8 +14,6 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool isPolling = true;
 
     public ObservableCollection<ConfiguredDevice> Devices { get; } = [];
-    
-    public SettingsViewModel(Func<Task> save) => _save=save;
 
     public void Load(AppSettings s)
     {
@@ -28,13 +25,13 @@ public partial class SettingsViewModel : ObservableObject
     [RelayCommand] private async Task AddDeviceAsync()
     {
         Devices.Add(new ConfiguredDevice { Name="New Device", Model="H5110", Transport=DeviceTransport.Bluetooth });
-        await _save();
+        await save();
     }
     [RelayCommand] private async Task RemoveDeviceAsync(ConfiguredDevice? d)
     {
-        if (d is null) return; Devices.Remove(d); await _save();
+        if (d is null) return; Devices.Remove(d); await save();
     }
-    [RelayCommand] private Task SaveAsync() => _save();
+    [RelayCommand] private Task SaveAsync() => save();
 
     public AppSettings ToSettings() => new()
     {

@@ -22,6 +22,7 @@ public sealed class SettingsService
     public async Task SaveAsync(AppSettings settings)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(_file)!);
+        
         await using var stream = File.Create(_file);
         await JsonSerializer.SerializeAsync(stream, settings, new JsonSerializerOptions { WriteIndented = true });
     }

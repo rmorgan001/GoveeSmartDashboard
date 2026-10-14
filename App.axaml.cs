@@ -3,12 +3,11 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using GoVeeSmartDashboard.Services;
 using GoVeeSmartDashboard.ViewModels;
-using GoveeSmartDashboard.Views;
 using GoVeeSmartDashboard.Views;
 
-namespace GoveeSmartDashboard;
+namespace GoVeeSmartDashboard;
 
-public partial class App : Application
+public class App : Application
 {
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 

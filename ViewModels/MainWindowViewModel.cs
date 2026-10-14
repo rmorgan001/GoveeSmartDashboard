@@ -1,9 +1,10 @@
-using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GoVeeSmartDashboard.Models;
 using GoVeeSmartDashboard.Services;
+using System.Collections.ObjectModel;
+using System.Reflection;
 
 namespace GoVeeSmartDashboard.ViewModels;
 
@@ -14,14 +15,15 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly GoVeeApiClient _api;
     private readonly GoVeeBleService _ble;
     private CancellationTokenSource? _pollCts;
-    private int _logNumber = 0;
+    private int _logNumber;
 
-    [ObservableProperty] private bool isBusy;
-    [ObservableProperty] private string statusMessage="Starting…";
-    [ObservableProperty] private DateTimeOffset? lastPoll;
-    [ObservableProperty] private string messageToLog = "Hello from the first tab!";
-    [ObservableProperty] private string logFilePath = "";
-    [ObservableProperty] private bool logToFile = true;
+    [ObservableProperty] public partial bool IsBusy { get; set; } 
+    [ObservableProperty] public partial string StatusMessage { get; set; } = "Starting…";
+    [ObservableProperty] public partial  DateTime LastPollTime { get; set; } = DateTime.Now;    
+    [ObservableProperty] public partial string MessageToLog { get; set; }  = "Hello from the first tab!";
+    [ObservableProperty] public partial string LogFilePath { get; set; }
+    [ObservableProperty] public partial bool LogToFile { get; set; }
+    [ObservableProperty] public partial string AssemblyVersion { get; set; } = Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "Unknown";
 
     public ObservableCollection<DeviceCardViewModel> Devices { get; } = [];
     public ObservableCollection<LogEntry> Entries => _loggingService.Entries;
@@ -41,6 +43,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     private async Task InitializeAsync()
     {
+        LastPollTime = DateTime.Now;
         var s=await _settings.LoadAsync();
         Settings.Load(s);
         await FindAndPollAsync();
@@ -79,13 +82,13 @@ public partial class MainWindowViewModel : ObservableObject
     {
         if (IsBusy)
         {
-            StatusMessage=$"Warning: Busy {IsBusy} {LastPoll:HH:mm:ss}"; /* log status */
+            StatusMessage=$"Warning: Busy {IsBusy}"; /* log status */
             LogMessage(StatusMessage);
             return;
         }
         if (!Settings.IsPolling)
         {
-            StatusMessage=$"Warning: Polling {Settings.IsPolling} {LastPoll:HH:mm:ss}"; /* log status */
+            StatusMessage=$"Warning: Polling {Settings.IsPolling}"; /* log status */
             LogMessage(StatusMessage);
             return;
         }
@@ -94,16 +97,15 @@ public partial class MainWindowViewModel : ObservableObject
         {
             await SaveSettingsAsync();
             var configs = Settings.Devices.Where(d => d.Enabled).ToList();
-            //var rest = configs.Where(d => d.Transport == DeviceTransport.Rest).ToList();
             var ble = configs.Where(d => d.Transport == DeviceTransport.Bluetooth).ToList();
 
-            var restDevices = string.IsNullOrWhiteSpace(Settings.ApiKey)
-                ? new List<GoVeeRestDevice>()
-                : (await _api.GetDevicesAsync(Settings.ApiKey, CancellationToken.None)).ToList();
+            List<GoVeeRestDevice> restDevices = string.IsNullOrWhiteSpace(Settings.ApiKey)
+                ? []
+                : [.. (await _api.GetDevicesAsync(Settings.ApiKey, CancellationToken.None))];
 
-            var readings = ble.Count == 0
-                ? Array.Empty<GoVeeBleService.BleReading>()
-                : (await _ble.ScanAsync(TimeSpan.FromSeconds(3), CancellationToken.None)).ToArray();
+            GoVeeBleService.BleReading[] readings = ble.Count == 0
+                ? []
+                : [.. (await _ble.ScanAsync(TimeSpan.FromSeconds(7), CancellationToken.None))];
 
             var unassignedBle = readings
                 .OrderBy(r => r.BluetoothAddress, StringComparer.OrdinalIgnoreCase)
@@ -144,7 +146,7 @@ public partial class MainWindowViewModel : ObservableObject
                         snapshot = new DeviceSnapshot
                         {
                             Name = c.Name, Model = c.Model, DeviceId = match.BluetoothAddress, Online = true,
-                            TemperatureC = match.TemperatureC, Humidity = match.Humidity,
+                            TemperatureC = match.TemperatureC, TemperatureF=match.TemperatureC * 1.8 + 32, Humidity = match.Humidity,
                             BatteryPercent = match.BatteryPercent,
                             Transport = "Bluetooth LE", Detail = match.LocalName, Timestamp = match.LastSeen
                         };
@@ -155,10 +157,10 @@ public partial class MainWindowViewModel : ObservableObject
             }
 
             await SaveSettingsAsync();
-            LastPoll = DateTimeOffset.Now;
-            StatusMessage = $"Last update {LastPoll:HH:mm:ss}"; /* log status */
+            LastPollTime = DateTime.Now;
+            StatusMessage="Poll Completed";
             LogMessage(StatusMessage);
-            RunTempChecks();
+
         }
         catch (Exception ex)
         {
@@ -205,8 +207,14 @@ public partial class MainWindowViewModel : ObservableObject
             while(!ct.IsCancellationRequested)
             {
                 try { await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(Settings.PollingIntervalSeconds,2,300)),ct); }
-                catch(OperationCanceledException) { break; }
+                catch(OperationCanceledException ex)
+                {
+                    StatusMessage=$"OperationCanceledException: {ex.Message}";
+                    LogMessage(StatusMessage);
+                    break;
+                }
                 await Dispatcher.UIThread.InvokeAsync(async()=>await FindAndPollAsync());
+                Dispatcher.UIThread.Invoke(RunTempChecks);
             }
         },ct);
     }
@@ -215,55 +223,71 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void RunTempChecks()
     {
-        var plug1 = Devices.FirstOrDefault(p => p.Name.ToUpper() == "PLUG 1");
-        var inside = Devices.FirstOrDefault(p => p.Name.ToUpper() == "INSIDE");
-        var lanai = Devices.FirstOrDefault(p => p.Name.ToUpper() == "LANAI");
+        try
+        {
+            var plug1 = Devices.FirstOrDefault(u => string.Equals(u.Name, "PLUG 1", StringComparison.OrdinalIgnoreCase));
+            var inside = Devices.FirstOrDefault(u => string.Equals(u.Name, "INSIDE", StringComparison.OrdinalIgnoreCase));
+            var lanai = Devices.FirstOrDefault(u => string.Equals(u.Name, "LANAI", StringComparison.OrdinalIgnoreCase));
 
         if (plug1 == null || inside == null || lanai == null)
         {
-            StatusMessage=$"Warning: Some sensors are missing {LastPoll:HH:mm:ss}";
+            StatusMessage="Warning: Some sensors are missing ";
             LogMessage(StatusMessage);
             return; /* log any sensors that are null */
         }
 
         if (plug1 is { Online: false } && inside is { Online: false } && lanai is { Online: false })
         {
-            StatusMessage=$"Warning: Some sensors not online {LastPoll:HH:mm:ss}";
+            StatusMessage="Warning: Some sensors not online ";
             LogMessage(StatusMessage);
             return; /* log any sensors that are not online */
         }
 
         if (inside.TemperatureF == null || lanai.TemperatureF == null)
         {
-            StatusMessage=$"Warning: Inside {inside.TemperatureF ?? 0}, Lanai {lanai.TemperatureF ?? 0} {LastPoll:HH:mm:ss}";
+            StatusMessage=$"Warning: {inside.Name} {inside.TemperatureF ?? 0}, {lanai.Name} {lanai.TemperatureF ?? 0} ";
             LogMessage(StatusMessage);
             return; /* log temp data is missing from sensor */
         }
 
         if (inside.TemperatureF <= Settings.LowTempLimit) { 
             plug1.TurnOffCommand.Execute(null); /* log temp is below inside limit */ 
-            StatusMessage=$"Action: Plug 1 Off {LastPoll:HH:mm:ss}";
+            StatusMessage=$"Action: {plug1.Name} Off - {inside.Name}: {inside.TemperatureF}";
             LogMessage(StatusMessage);
             return; }
 
         if (lanai.TemperatureF <= Settings.HighTempLimit)
         {
             plug1.TurnOnCommand.Execute(null); /* log temp is above lanai limit */
-            StatusMessage=$"Action: Plug 1 On {LastPoll:HH:mm:ss}";
+            StatusMessage=$"Action: {plug1.Name} On - {lanai.Name}: {lanai.TemperatureF}";
+            LogMessage(StatusMessage);
+            return;
+        }
+
+        if (lanai.TemperatureF > Settings.HighTempLimit)
+        {
+            plug1.TurnOffCommand.Execute(null); /* log temp is above lanai limit */
+            StatusMessage=$"Action: {plug1.Name} Off - {lanai.Name}: {lanai.TemperatureF}";
             LogMessage(StatusMessage);
             return;
         }
         
-        /* log all checks passed */
-
-        StatusMessage=$"All checks passed no actions {LastPoll:HH:mm:ss}";
+        StatusMessage="All checks passed no actions ";
         LogMessage(StatusMessage);
+
+        
+        }
+        catch (Exception ex)
+        {
+            StatusMessage=$"Error: {ex.Message}";
+            LogMessage(StatusMessage);
+        }
     }
 
     private void LogMessage(string message)
     {
         _logNumber++;
-        var now = DateTime.Now;
+        var now = DateTimeOffset.Now;
         var entry = new LogEntry(_logNumber, now, message);
         Entries.Add(entry);
         _loggingService.LogAsync(entry).GetAwaiter().GetResult();

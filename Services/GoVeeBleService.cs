@@ -1,5 +1,4 @@
 using System.Runtime.InteropServices.WindowsRuntime;
-using GoVeeSmartDashboard.Models;
 using Windows.Devices.Bluetooth.Advertisement;
 
 namespace GoVeeSmartDashboard.Services;
@@ -7,11 +6,10 @@ namespace GoVeeSmartDashboard.Services;
 public sealed class GoVeeBleService
 {
     private readonly Dictionary<ulong, BleReading> _latest = new();
-    private readonly object _gate = new();
+    private readonly Lock _gate = new();
 
     public async Task<IReadOnlyList<BleReading>> ScanAsync(TimeSpan duration, CancellationToken ct)
     {
-        BluetoothLEAdvertisementWatcher? watcher = null;
         void Received(BluetoothLEAdvertisementWatcher _, BluetoothLEAdvertisementReceivedEventArgs args)
         {
             try
@@ -36,16 +34,19 @@ public sealed class GoVeeBleService
                         };
                 }
             }
-            catch { }
+            catch (Exception)
+            {
+                // ignored
+            }
         }
 
-        watcher = new BluetoothLEAdvertisementWatcher { ScanningMode = BluetoothLEScanningMode.Active };
+        var watcher = new BluetoothLEAdvertisementWatcher { ScanningMode = BluetoothLEScanningMode.Active };
         watcher.Received += Received;
         watcher.Start();
         try { await Task.Delay(duration, ct); }
         finally { watcher.Stop(); watcher.Received -= Received; }
 
-        lock (_gate) return _latest.Values.ToList();
+        lock (_gate) return [.. _latest.Values];
     }
 
     private static (double temp, double humidity, int battery, bool error) Decode(byte[] b, int o)
@@ -54,7 +55,7 @@ public sealed class GoVeeBleService
         var raw = (b[o] << 16) | (b[o + 1] << 8) | b[o + 2];
         var negative = (raw & 0x800000) != 0;
         var magnitude = raw & 0x7FFFFF;
-        var temp = (int)(magnitude / 1000) / 10.0;
+        var temp = magnitude / 10000.0;
         if (negative) temp = -temp;
         return (temp, (magnitude % 1000) / 10.0, b[o + 3] & 0x7F, (b[o + 3] & 0x80) != 0);
     }

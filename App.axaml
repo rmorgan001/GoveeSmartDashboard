@@ -1,6 +1,7 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="GoveeSmartDashboard.App">
+             x:Class="GoVeeSmartDashboard.App"
+             RequestedThemeVariant="Default">
   <Application.Styles>
     <FluentTheme />
     <Style Selector="Window"><Setter Property="Background" Value="#0D1117"/></Style>

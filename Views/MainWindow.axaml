@@ -1,163 +1,360 @@
-<Window xmlns="https://github.com/avaloniaui"
+<Window x:Class="GoVeeSmartDashboard.Views.MainWindow"
+        xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        x:Class="GoVeeSmartDashboard.Views.MainWindow"
-        xmlns:views="using:GoVeeSmartDashboard.Views" 
-        xmlns:views1="clr-namespace:GoveeSmartDashboard.Views"
-        Title="GoVee Smart Dashboard" Width="680" Height="650">
-  <TabControl Background="Wheat">
-      <TabControl.Styles>
-          <!-- This targets the header text of each individual tab item -->
-          <Style Selector="TabItem">
-              <Setter Property="FontSize" Value="16" />
-          </Style>
-      </TabControl.Styles>
-    <TabItem Header="Main" FontWeight="Bold" >
-      <Grid RowDefinitions="Auto,Auto,*" >
-        <DockPanel>
-          <Button DockPanel.Dock="Right" Classes="primary" Content="Find / Refresh Devices" Command="{Binding FindAndPollCommand}"/>
-          <StackPanel>
-            <TextBlock Text="GoVee Smart Dashboard" FontSize="28" FontWeight="Bold"/>
-            <TextBlock Text="{Binding StatusMessage}" Foreground="#8B949E" Margin="5"/>
-          </StackPanel>
-        </DockPanel>
-        <Border Grid.Row="1" Background="DarkSlateGray" CornerRadius="10" Padding="8">
-          <Grid ColumnDefinitions="Auto,Auto,*,Auto">
-            <TextBlock Text="System" FontWeight="SemiBold" Foreground="Gold" Margin="5,0,0,0"/>
-            <Ellipse Grid.Column="1" Width="10" Height="10" Fill="#39D353" Margin="5,0,5,0"/>
-            <TextBlock Grid.Column="2" Text="Automatic discovery and polling active" Foreground="Gold"/>
-            <TextBlock Grid.Column="3" Text="{Binding LastPoll, StringFormat='Updated: {0:HH:mm:ss}'}" Foreground="#8B949E" Margin="0,0,5,0"/>
-          </Grid>
-        </Border>
-        <ScrollViewer Grid.Row="2" HorizontalAlignment="Center">
-          <ItemsControl ItemsSource="{Binding Devices}">
-            <ItemsControl.ItemsPanel>
-              <ItemsPanelTemplate><WrapPanel Orientation="Horizontal"/></ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-              <DataTemplate>
-                <Border Classes="card" Margin="3" Width="320" Background="DarkSlateGray">
-                  <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="5" >
-                    <Grid ColumnDefinitions="*,Auto">
-                      <StackPanel>
-                        <TextBlock Text="{Binding Name}" FontSize="20" FontWeight="Bold" Foreground="Gold"/>
-                        <TextBlock Text="{Binding Model}" Foreground="#8B949E"/>
-                      </StackPanel>
-                      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="7">
-                        <Ellipse Width="11" Height="11" Fill="{Binding Online, Converter={x:Static views1:BoolToBrushConverter.Instance}}"/>
-                        <TextBlock Text="{Binding OnlineText}" FontWeight="Bold" Foreground="Gold"/>
-                      </StackPanel>
-                    </Grid>
-                    <Grid Grid.Row="1" ColumnDefinitions="*,Auto">
-                      <TextBlock Text="{Binding Transport}" Foreground="#8B949E"/>
-                      <TextBlock Grid.Column="1" Text="{Binding DeviceId}" FontSize="11" Foreground="#6E7681"/>
-                    </Grid>
-                    <Border Grid.Row="2" Background="#0D1117" CornerRadius="12" Padding="5">
-                      <Grid ColumnDefinitions="Auto,*">
-                        <Ellipse Width="50" Height="50" Fill="{Binding StatusColor}" Stroke="#30363D" StrokeThickness="2"/>
-                        <StackPanel Grid.Column="1" Margin="18,0,0,0" VerticalAlignment="Center">
-                          <TextBlock Text="{Binding StatusText}" Foreground="Gold" FontSize="32" FontWeight="Bold"/>
-                          <TextBlock Text="POWER" Foreground="#8B949E" FontSize="11"/>
-                        </StackPanel>
-                      </Grid>
-                    </Border>
-                    <Grid Grid.Row="3" ColumnDefinitions="*,*,*,*" ColumnSpacing="5">
-                      <StackPanel Grid.Column="0"><TextBlock Text="Temp C" Foreground="#8B949E"/><TextBlock Foreground="Gold" Text="{Binding TemperatureC, StringFormat='{}{0:F1}° '}" FontSize="18"/></StackPanel>
-                      <StackPanel Grid.Column="1"><TextBlock Text="Temp F" Foreground="#8B949E"/><TextBlock Foreground="Gold" Text="{Binding TemperatureF, StringFormat='{}{0:F1}°'}" FontSize="18"/></StackPanel>
-                      <StackPanel Grid.Column="2"><TextBlock Text="Humidity" Foreground="#8B949E"/><TextBlock Foreground="Gold" Text="{Binding Humidity, StringFormat='{}{0:F1}%'}" FontSize="18"/></StackPanel>
-                      <StackPanel Grid.Column="3"><TextBlock Text="Battery" Foreground="#8B949E"/><TextBlock Foreground="Gold" Text="{Binding BatteryPercent, StringFormat='{}{0}%'}" FontSize="18"/></StackPanel>
-                    </Grid>
-                    <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="5" IsVisible="{Binding IsPlug}">
-                      <Button Classes="primary" Content="TURN ON" Command="{Binding TurnOnCommand}"/>
-                      <Button Classes="danger" Content="TURN OFF" Command="{Binding TurnOffCommand}"/>
+        xmlns:models="using:GoVeeSmartDashboard.Models"
+        xmlns:views11="clr-namespace:GoVeeSmartDashboard.Views"
+        xmlns:vm="using:GoVeeSmartDashboard.ViewModels"
+        Title="GoVee Smart Dashboard"
+        Width="680"
+        Height="650">
+    <TabControl Background="Wheat">
+        <TabControl.Styles>
+            <!--  This targets the header text of each individual tab item  -->
+            <Style Selector="TabItem">
+                <Setter Property="FontSize" Value="16" />
+            </Style>
+        </TabControl.Styles>
+        <TabItem FontWeight="Bold" Header="Main">
+            <Grid RowDefinitions="Auto,Auto,*">
+                <DockPanel>
+                    <Button Classes="primary"
+                            Command="{Binding FindAndPollCommand}"
+                            Content="Find / Refresh Devices"
+                            DockPanel.Dock="Right" />
+                    <StackPanel>
+                        <TextBlock FontSize="24"
+                                   FontWeight="Bold"
+                                   Text="{Binding AssemblyVersion, StringFormat='GoVee Smart Dashboard: v{0}'}" />
+                        <TextBlock Margin="10,0,0,5"
+                                   Foreground="#8B949E"
+                                   Text="{Binding StatusMessage}" />
                     </StackPanel>
-                  </Grid>
+                </DockPanel>
+                <Border Grid.Row="1"
+                        Padding="8"
+                        Background="DarkSlateGray"
+                        CornerRadius="10">
+                    <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+                        <TextBlock Margin="5,0,0,0"
+                                   FontWeight="SemiBold"
+                                   Foreground="Gold"
+                                   Text="System" />
+                        <Ellipse Grid.Column="1"
+                                 Width="10"
+                                 Height="10"
+                                 Margin="5,0,5,0"
+                                 Fill="#39D353" />
+                        <TextBlock Grid.Column="2"
+                                   Foreground="Gold"
+                                   Text="Automatic discovery and polling active" />
+                        <TextBlock Grid.Column="3"
+                                   Margin="0,0,5,0"
+                                   Foreground="#8B949E"
+                                   Text="{Binding LastPollTime, StringFormat='Updated: {0:HH:mm:ss}'}" />
+                    </Grid>
                 </Border>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-        </ScrollViewer>
-      </Grid>
-    </TabItem>
+                <ScrollViewer Grid.Row="2" HorizontalAlignment="Center">
+                    <ItemsControl ItemsSource="{Binding Devices}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:DeviceCardViewModel}">
+                                <Border Width="320"
+                                        Margin="3"
+                                        Background="DarkSlateGray"
+                                        Classes="card">
+                                    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="5">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel>
+                                                <TextBlock FontSize="20"
+                                                           FontWeight="Bold"
+                                                           Foreground="Gold"
+                                                           Text="{Binding Name}" />
+                                                <TextBlock Foreground="#8B949E" Text="{Binding Model}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1"
+                                                        Orientation="Horizontal"
+                                                        Spacing="7">
+                                                <Ellipse Width="11"
+                                                         Height="11"
+                                                         Fill="{Binding Online, Converter={x:Static views11:BoolToBrushConverter.Instance}}" />
+                                                <TextBlock FontWeight="Bold"
+                                                           Foreground="Gold"
+                                                           Text="{Binding OnlineText}" />
+                                            </StackPanel>
+                                        </Grid>
+                                        <Grid Grid.Row="1" ColumnDefinitions="*,Auto">
+                                            <TextBlock Foreground="#8B949E" Text="{Binding Transport}" />
+                                            <TextBlock Grid.Column="1"
+                                                       FontSize="11"
+                                                       Foreground="#6E7681"
+                                                       Text="{Binding DeviceId}" />
+                                        </Grid>
+                                        <Border Grid.Row="2"
+                                                Padding="5"
+                                                Background="#0D1117"
+                                                CornerRadius="12">
+                                            <Grid ColumnDefinitions="Auto,*">
+                                                <Ellipse Width="50"
+                                                         Height="50"
+                                                         Fill="{Binding StatusColor}"
+                                                         Stroke="#30363D"
+                                                         StrokeThickness="2" />
+                                                <StackPanel Grid.Column="1"
+                                                            Margin="18,0,0,0"
+                                                            VerticalAlignment="Center">
+                                                    <TextBlock FontSize="32"
+                                                               FontWeight="Bold"
+                                                               Foreground="Gold"
+                                                               Text="{Binding StatusText}" />
+                                                    <TextBlock FontSize="11"
+                                                               Foreground="#8B949E"
+                                                               Text="POWER" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                        <Grid Grid.Row="3"
+                                              ColumnDefinitions="*,*,*,*"
+                                              ColumnSpacing="5">
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Foreground="#8B949E" Text="Temp C" />
+                                                <TextBlock FontSize="18"
+                                                           Foreground="Gold"
+                                                           Text="{Binding TemperatureC, StringFormat='{}{0:F1}° '}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock Foreground="#8B949E" Text="Temp F" />
+                                                <TextBlock FontSize="18"
+                                                           Foreground="Gold"
+                                                           Text="{Binding TemperatureF, StringFormat='{}{0:F1}°'}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2">
+                                                <TextBlock Foreground="#8B949E" Text="Humidity" />
+                                                <TextBlock FontSize="18"
+                                                           Foreground="Gold"
+                                                           Text="{Binding Humidity, StringFormat='{}{0:F1}%'}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="3">
+                                                <TextBlock Foreground="#8B949E" Text="Battery" />
+                                                <TextBlock FontSize="18"
+                                                           Foreground="Gold"
+                                                           Text="{Binding BatteryPercent, StringFormat='{}{0}%'}" />
+                                            </StackPanel>
+                                        </Grid>
+                                        <StackPanel Grid.Row="4"
+                                                    IsVisible="{Binding IsPlug}"
+                                                    Orientation="Horizontal"
+                                                    Spacing="5">
+                                            <Button Classes="primary"
+                                                    Command="{Binding TurnOnCommand}"
+                                                    Content="TURN ON" />
+                                            <Button Classes="danger"
+                                                    Command="{Binding TurnOffCommand}"
+                                                    Content="TURN OFF" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </TabItem>
 
-    <TabItem Header="Settings" FontWeight="Bold">
-      <ScrollViewer>
-        <StackPanel MaxWidth="900">
-          <TextBlock Text="Settings" FontSize="28" FontWeight="Bold"/>
-          <Border Classes="card">
-            <StackPanel>
-              <TextBlock Text="GoVee REST API" FontSize="18" FontWeight="SemiBold" Foreground="Gold"/>
-              <TextBox Text="{Binding Settings.ApiKey}" PasswordChar="•" Classes="revealPasswordButton" Watermark="GoVee API key"/>
-              <TextBlock Text="Stored locally in your Windows user profile." Foreground="#8B949E" FontSize="12"/>
-            </StackPanel>
-          </Border>
-          <Border Classes="card" Background="DarkSlateGray">
-            <StackPanel>
-              <Grid ColumnDefinitions="*,150" RowDefinitions="*,*,*,*">
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="Polling On/Off" Foreground="#8B949E" FontWeight="DemiBold"  VerticalAlignment="Center"/>
-                <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding Settings.IsPolling}" Content="Enabled" VerticalAlignment="Center" Foreground="Gold"/>
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Polling Interval (seconds)" Foreground="#8B949E" FontWeight="DemiBold"  VerticalAlignment="Center"/>
-                <NumericUpDown Grid.Row="1" Grid.Column="1" Minimum="2" Maximum="300" Value="{Binding Settings.PollingIntervalSeconds}"/>
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="Plug 1 Off (Inside Temp &lt; °F)" Foreground="#8B949E" FontWeight="DemiBold"  VerticalAlignment="Center"/>
-                <NumericUpDown Grid.Row="2" Grid.Column="1" Minimum="32" Maximum="100" Value="{Binding Settings.LowTempLimit, StringFormat=\{0:F2\}}"/>
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="Plug 1 On (Lanai Temp &lt; °F)" Foreground="#8B949E" FontWeight="DemiBold"  VerticalAlignment="Center"/>
-                <NumericUpDown Grid.Row="3" Grid.Column="1" Minimum="32" Maximum="100" Value="{Binding Settings.HighTempLimit, StringFormat=\{0:F2\}}"/>
-              </Grid>
-            </StackPanel>
-          </Border>
-          <Border Classes="card" Background="DarkSlateGray" >
-            <StackPanel Spacing="5">
-              <TextBlock Text="Devices" FontSize="18" FontWeight="SemiBold" Foreground="Gold"/>
-              <ItemsControl ItemsSource="{Binding Settings.Devices}">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate>
-                    <Border Background="#0D1117" CornerRadius="8" Padding="2" Margin="0,0,0,2">
-                      <Grid ColumnDefinitions="*,Auto,110,185,100" ColumnSpacing="5">
-                        <TextBox Text="{Binding Name}" Watermark="Name"/>
-                        <TextBox Grid.Column="1" Text="{Binding Model}" Watermark="Model"/>
-                        <ComboBox Grid.Column="2" SelectedValue="{Binding TransportName}" SelectedValueBinding="{Binding Content}" Width="110">
-                          <ComboBoxItem Content="REST"/><ComboBoxItem Content="Bluetooth"/>
-                        </ComboBox>
-                        <TextBox Grid.Column="3" Text="{Binding DeviceId}" Watermark="Device ID / BLE address"/>
-                        <CheckBox Grid.Column="4" IsChecked="{Binding Enabled}" Content="Enabled" VerticalAlignment="Center" Foreground="Gold"/>
-                      </Grid>
+        <TabItem FontWeight="Bold" Header="Settings">
+            <ScrollViewer>
+                <StackPanel MaxWidth="900">
+                    <TextBlock FontSize="24"
+                               FontWeight="Bold"
+                               Text="Settings" />
+                    <Border Classes="card">
+                        <StackPanel>
+                            <TextBlock FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Foreground="Gold"
+                                       Text="GoVee REST API" />
+                            <Grid ColumnDefinitions="*, Auto">
+                                <TextBox Name="PasswordBox"
+                                         PasswordChar="●"
+                                         RevealPassword="{Binding #RevealToggle.IsChecked}"
+                                         Text="{Binding Settings.ApiKey}" />
+                                <ToggleButton Name="RevealToggle"
+                                              Grid.Column="1"
+                                              Content="Show"
+                                              Foreground="Gold" />
+                            </Grid>
+                            <TextBlock FontSize="12"
+                                       Foreground="#8B949E"
+                                       Text="Stored locally in your Windows user profile." />
+                        </StackPanel>
                     </Border>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-              <StackPanel Orientation="Horizontal" Spacing="10">
-                <Button Classes="primary" Content="Add Device" Command="{Binding Settings.AddDeviceCommand}" Foreground="Gold"/>
-                <Button Classes="primary" Content="Save Settings" Command="{Binding Settings.SaveCommand}"/>
-              </StackPanel>
-              <TextBlock Text="For two identical H5110 sensors, enter their Bluetooth addresses after discovery so Inside and Lanai remain distinct." TextWrapping="Wrap" Foreground="#8B949E" FontSize="12"/>
-            </StackPanel>
-          </Border>
-        </StackPanel>
-      </ScrollViewer>
-    </TabItem>
+                    <Border Background="DarkSlateGray" Classes="card">
+                        <StackPanel>
+                            <Grid ColumnDefinitions="*,150" RowDefinitions="*,*,*,*">
+                                <TextBlock Grid.Row="0"
+                                           Grid.Column="0"
+                                           VerticalAlignment="Center"
+                                           FontWeight="DemiBold"
+                                           Foreground="#8B949E"
+                                           Text="Polling On/Off" />
+                                <CheckBox Grid.Row="0"
+                                          Grid.Column="1"
+                                          VerticalAlignment="Center"
+                                          Content="Enabled"
+                                          Foreground="Gold"
+                                          IsChecked="{Binding Settings.IsPolling}" />
+                                <TextBlock Grid.Row="1"
+                                           Grid.Column="0"
+                                           VerticalAlignment="Center"
+                                           FontWeight="DemiBold"
+                                           Foreground="#8B949E"
+                                           Text="Polling Interval (seconds)" />
+                                <NumericUpDown Grid.Row="1"
+                                               Grid.Column="1"
+                                               Maximum="300"
+                                               Minimum="2"
+                                               Value="{Binding Settings.PollingIntervalSeconds}" />
+                                <TextBlock Grid.Row="2"
+                                           Grid.Column="0"
+                                           VerticalAlignment="Center"
+                                           FontWeight="DemiBold"
+                                           Foreground="#8B949E"
+                                           Text="Plug 1 Off (Inside Temp &lt; °F)" />
+                                <NumericUpDown Grid.Row="2"
+                                               Grid.Column="1"
+                                               Maximum="100"
+                                               Minimum="32"
+                                               Value="{Binding Settings.LowTempLimit, StringFormat=\{0:F2\}}" />
+                                <TextBlock Grid.Row="3"
+                                           Grid.Column="0"
+                                           VerticalAlignment="Center"
+                                           FontWeight="DemiBold"
+                                           Foreground="#8B949E"
+                                           Text="Plug 1 On (Lanai Temp &lt; °F)" />
+                                <NumericUpDown Grid.Row="3"
+                                               Grid.Column="1"
+                                               Maximum="100"
+                                               Minimum="32"
+                                               Value="{Binding Settings.HighTempLimit, StringFormat=\{0:F2\}}" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                    <Border Background="DarkSlateGray" Classes="card">
+                        <StackPanel Spacing="5">
+                            <TextBlock FontSize="18"
+                                       FontWeight="SemiBold"
+                                       Foreground="Gold"
+                                       Text="Devices" />
+                            <ItemsControl ItemsSource="{Binding Settings.Devices}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="models:ConfiguredDevice">
+                                        <Border Margin="0,0,0,2"
+                                                Padding="2"
+                                                Background="#0D1117"
+                                                CornerRadius="8">
+                                            <Grid ColumnDefinitions="*,Auto,110,185,100" ColumnSpacing="5">
+                                                <TextBox PlaceholderText="Name" Text="{Binding Name}" />
+                                                <TextBox Grid.Column="1"
+                                                         PlaceholderText="Model"
+                                                         Text="{Binding Model}" />
+                                                <ComboBox Grid.Column="2"
+                                                          Width="110"
+                                                          SelectedValue="{Binding TransportName}"
+                                                          SelectedValueBinding="{Binding Content}">
+                                                    <ComboBoxItem Content="REST" />
+                                                    <ComboBoxItem Content="Bluetooth" />
+                                                </ComboBox>
+                                                <TextBox Grid.Column="3"
+                                                         PlaceholderText="Device ID / BLE address"
+                                                         Text="{Binding DeviceId}" />
+                                                <CheckBox Grid.Column="4"
+                                                          VerticalAlignment="Center"
+                                                          Content="Enabled"
+                                                          Foreground="Gold"
+                                                          IsChecked="{Binding Enabled}" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <Button Classes="primary"
+                                        Command="{Binding Settings.AddDeviceCommand}"
+                                        Content="Add Device"
+                                        Foreground="Gold" />
+                                <Button Classes="primary"
+                                        Command="{Binding Settings.SaveCommand}"
+                                        Content="Save Settings" />
+                            </StackPanel>
+                            <TextBlock FontSize="12"
+                                       Foreground="#8B949E"
+                                       Text="For two identical H5110 sensors, enter their Bluetooth addresses after discovery so Inside and Lanai remain distinct."
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
 
-      <TabItem Header="Log" FontWeight="Bold">
-          <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Margin="5" RowSpacing="2">
-              <TextBlock Grid.Row="0" Text="Logging Options" FontSize="24" FontWeight="SemiBold"/>
-              <CheckBox Grid.Row="1" Content="Log to file" IsChecked="{Binding LogToFile}"/>
-              <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-                  <TextBlock Grid.Column="0" Text="Log:" VerticalAlignment="Center"/>
-                  <TextBox Grid.Column="1" Text="{Binding LogFilePath}" VerticalAlignment="Center"/>
-                  <Button Grid.Column="2" Content="Apply" Command="{Binding ApplyLogFilePathCommand}" Padding="10,7"/>
-              </Grid>
-              <Border Grid.Row="3" BorderThickness="1" CornerRadius="6">
-                  <ListBox ItemsSource="{Binding Entries}" Padding="-5">
-                      <ListBox.ItemTemplate>
-                          <DataTemplate>
-                              <TextBlock Text="{Binding DisplayText}" FontFamily="Consolas" TextWrapping="Wrap" />
-                          </DataTemplate>
-                      </ListBox.ItemTemplate>
-                  </ListBox>
-              </Border>
-              <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="5">
-                  <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="430"/>
-                  <Button Content="Clear Log" Command="{Binding ClearLogCommand}" Padding="18,9"/>
-              </StackPanel>
-          </Grid>
-      </TabItem>
-  </TabControl>
+        <TabItem FontWeight="Bold" Header="Log">
+            <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="2">
+                <TextBlock Grid.Row="0"
+                           FontSize="24"
+                           FontWeight="Bold"
+                           Text="Logging Options" />
+                <CheckBox Grid.Row="1"
+                          Content="Log to file"
+                          IsChecked="{Binding LogToFile}" />
+                <Grid Grid.Row="2"
+                      ColumnDefinitions="Auto,*,Auto"
+                      ColumnSpacing="8">
+                    <TextBlock Grid.Column="0"
+                               VerticalAlignment="Center"
+                               Text="Log:" />
+                    <TextBox Grid.Column="1"
+                             VerticalAlignment="Center"
+                             Text="{Binding LogFilePath}" />
+                    <Button Grid.Column="2"
+                            Padding="10,7"
+                            Command="{Binding ApplyLogFilePathCommand}"
+                            Content="Apply" />
+                </Grid>
+                <Border Grid.Row="3"
+                        BorderThickness="1"
+                        CornerRadius="6">
+                    <ListBox ItemsSource="{Binding Entries}">
+                        <ListBox.Styles>
+                            <Style Selector="ListBoxItem">
+                                <Setter Property="MinHeight" Value="0" />
+                                <Setter Property="Padding" Value="4,2" />
+                                <!--  Adjust padding as needed  -->
+                            </Style>
+                        </ListBox.Styles>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type models:LogEntry}">
+                                <TextBlock FontFamily="Consolas"
+                                           Text="{Binding DisplayText}"
+                                           TextWrapping="Wrap" />
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+                <StackPanel Grid.Row="4"
+                            HorizontalAlignment="Right"
+                            Orientation="Horizontal"
+                            Spacing="5">
+                    <TextBlock MaxWidth="430"
+                               VerticalAlignment="Center"
+                               Text="{Binding StatusMessage}"
+                               TextWrapping="Wrap" />
+                    <Button Padding="18,9"
+                            Command="{Binding ClearLogCommand}"
+                            Content="Clear Log" />
+                </StackPanel>
+            </Grid>
+        </TabItem>
+    </TabControl>
 </Window>

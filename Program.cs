@@ -1,6 +1,6 @@
 using Avalonia;
 
-namespace GoveeSmartDashboard;
+namespace GoVeeSmartDashboard;
 
 internal static class Program
 {

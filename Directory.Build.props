@@ -1,0 +1,8 @@
+<Project>
+	<PropertyGroup>
+		<!-- Set the version elements for your projects -->
+		<Version>1.0.1.0</Version>
+		<AssemblyVersion>1.0.1.0</AssemblyVersion>
+		<FileVersion>1.0.1.0</FileVersion>
+	</PropertyGroup>
+</Project>

@@ -4,10 +4,8 @@ using GoVeeSmartDashboard.Models;
 
 namespace GoVeeSmartDashboard.ViewModels;
 
-public partial class DeviceCardViewModel : ObservableObject
+public partial class DeviceCardViewModel(ConfiguredDevice c, Func<bool, Task>? setPower) : ObservableObject
 {
-    private readonly Func<bool, Task>? _setPower;
-
     [ObservableProperty] private bool online;
     [ObservableProperty] private bool? powerOn;
     [ObservableProperty] private double? temperatureC;
@@ -18,18 +16,18 @@ public partial class DeviceCardViewModel : ObservableObject
     [ObservableProperty] private string deviceId = "";
     [ObservableProperty] private DateTimeOffset? lastSeen;
 
-    public string Name { get; }
-    public string Model { get; }
-    public string Transport { get; }
+    public string Name { get; } = c.Name;
+    public string Model { get; } = c.Model;
+    public string Transport { get; } = c.TransportDisplay;
     public bool IsPlug => Model.Equals("H5086", StringComparison.OrdinalIgnoreCase);
     public string OnlineText => Online ? "ONLINE" : "OFFLINE";
-    public string StatusText => PowerOn == true ? "ON" : PowerOn == false ? "OFF" : "—";
-    public string StatusColor => PowerOn == true ? "#39D353" : "#6E7681";
-
-    public DeviceCardViewModel(ConfiguredDevice c, Func<bool, Task>? setPower)
+    public string StatusText => PowerOn switch
     {
-        Name=c.Name; Model=c.Model; Transport=c.TransportDisplay; _setPower=setPower;
-    }
+        true => "ON",
+        false => "OFF",
+        _ => "—"
+    };
+    public string StatusColor => PowerOn == true ? "#39D353" : "#6E7681";
 
     public void Apply(DeviceSnapshot s)
     {
@@ -38,6 +36,6 @@ public partial class DeviceCardViewModel : ObservableObject
         OnPropertyChanged(nameof(OnlineText)); OnPropertyChanged(nameof(StatusText)); OnPropertyChanged(nameof(StatusColor));
     }
 
-    [RelayCommand] private Task TurnOnAsync() => _setPower?.Invoke(true) ?? Task.CompletedTask;
-    [RelayCommand] private Task TurnOffAsync() => _setPower?.Invoke(false) ?? Task.CompletedTask;
+    [RelayCommand] private Task TurnOnAsync() => setPower?.Invoke(true) ?? Task.CompletedTask;
+    [RelayCommand] private Task TurnOffAsync() => setPower?.Invoke(false) ?? Task.CompletedTask;
 }

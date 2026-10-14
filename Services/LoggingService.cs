@@ -1,6 +1,6 @@
-using System.Collections.ObjectModel;
 using Avalonia.Threading;
 using GoVeeSmartDashboard.Models;
+using System.Collections.ObjectModel;
 
 namespace GoVeeSmartDashboard.Services;
 
@@ -12,30 +12,29 @@ public sealed class LoggingService : IDisposable
     private StreamWriter? _writer;
     private string? _activeFilePath;
     private bool _disposed;
-    private bool _logToFile = true;
-    private readonly object _sync = new();
+    private readonly Lock _sync = new();
 
-    public ObservableCollection<LogEntry> Entries { get; } = new();
+    public ObservableCollection<LogEntry> Entries { get; } = [];
     public event EventHandler<string>? FilePathChanged;
 
     public LoggingService()
     {
-        _defaultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "GoveeSmartDashboard", "Logs");
+        _defaultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "GoVeeSmartDashboard", "Logs");
         Directory.CreateDirectory(_defaultDirectory);
-        LogFilePath = Path.Combine(_defaultDirectory, $"GoveeSession{DateTime.Now:yyyyMMdd_HHmmss}.log");
+        LogFilePath = Path.Combine(_defaultDirectory, $"GoVeeSession{DateTime.Now:yyyy-MM-dd_HH-mm-ss-ffff}.log");
     }
 
     public string LogFilePath { get; private set; }
 
     public bool LogToFile
     {
-        get { lock (_sync) return _logToFile; }
+        get { lock (_sync) return field; }
         set
         {
-            lock (_sync) _logToFile = value;
+            lock (_sync) field = value;
             if (!value) CloseWriterAsync().GetAwaiter().GetResult();
         }
-    }
+    } = true;
 
     public void SetLogFilePath(string path)
     {
@@ -64,7 +63,7 @@ public sealed class LoggingService : IDisposable
         try
         {
             if (!LogToFile) return;
-            var targetPath = GetEffectiveFilePath(entry.Timestamp);
+            var targetPath = GetEffectiveFilePath();
             await EnsureWriterAsync(targetPath, cancellationToken);
             await _writer!.WriteLineAsync(entry.DisplayText.AsMemory(), cancellationToken);
             await _writer.FlushAsync(cancellationToken).ConfigureAwait(false);
@@ -74,17 +73,14 @@ public sealed class LoggingService : IDisposable
 
     public void ClearVisibleLog() => Dispatcher.UIThread.Post(Entries.Clear);
 
-    private string GetEffectiveFilePath(DateTime timestamp)
+    private string GetEffectiveFilePath()
     {
         lock (_sync)
         {
             var directory = Path.GetDirectoryName(LogFilePath) ?? _defaultDirectory;
             var extension = Path.GetExtension(LogFilePath);
             var stem = Path.GetFileNameWithoutExtension(LogFilePath);
-            var periodStart = timestamp.TimeOfDay >= TimeSpan.FromHours(12)
-                ? timestamp.Date.AddHours(12)
-                : timestamp.Date.AddDays(-1).AddHours(12);
-            return Path.Combine(directory, $"{stem}_{periodStart:yyyy-MM-dd}{extension}");
+            return Path.Combine(directory, $"{stem}_{extension}");
         }
     }
 
