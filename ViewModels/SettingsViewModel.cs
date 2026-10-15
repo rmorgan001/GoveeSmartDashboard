@@ -7,11 +7,11 @@ namespace GoVeeSmartDashboard.ViewModels;
 
 public partial class SettingsViewModel(Func<Task> save) : ObservableObject
 {
-    [ObservableProperty] private string apiKey = "";
-    [ObservableProperty] private int pollingIntervalSeconds = 15;
-    [ObservableProperty] private double lowTempLimit = 60.0;
-    [ObservableProperty] private double highTempLimit = 75.0;
-    [ObservableProperty] private bool isPolling = true;
+    [ObservableProperty] public partial string ApiKey { get; set; } = "";
+    [ObservableProperty] public partial int PollingIntervalSeconds { get; set; } = 15;
+    [ObservableProperty] public partial  double LowTempLimit { get; set; } = 60.0;
+    [ObservableProperty] public partial  double HighTempLimit { get; set; } = 75.0;
+    [ObservableProperty] public partial  bool IsPolling { get; set; } = true;
 
     public ObservableCollection<ConfiguredDevice> Devices { get; } = [];
 

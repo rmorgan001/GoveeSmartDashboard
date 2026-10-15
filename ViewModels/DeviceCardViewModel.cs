@@ -6,15 +6,15 @@ namespace GoVeeSmartDashboard.ViewModels;
 
 public partial class DeviceCardViewModel(ConfiguredDevice c, Func<bool, Task>? setPower) : ObservableObject
 {
-    [ObservableProperty] private bool online;
-    [ObservableProperty] private bool? powerOn;
-    [ObservableProperty] private double? temperatureC;
-    [ObservableProperty] private double? temperatureF;
-    [ObservableProperty] private double? humidity;
-    [ObservableProperty] private int? batteryPercent;
-    [ObservableProperty] private string detail = "";
-    [ObservableProperty] private string deviceId = "";
-    [ObservableProperty] private DateTimeOffset? lastSeen;
+    [ObservableProperty] public partial bool Online { get; set; }
+    [ObservableProperty] public partial bool? PowerOn { get; set; }
+    [ObservableProperty] public partial double? TemperatureC { get; set; }
+    [ObservableProperty] public partial double? TemperatureF { get; set; }
+    [ObservableProperty] public partial double? Humidity { get; set; }
+    [ObservableProperty] public partial int? BatteryPercent { get; set; }
+    [ObservableProperty] public partial string Detail { get; set; } = "";
+    [ObservableProperty] public partial string DeviceId { get; set; } = "";
+    [ObservableProperty] public partial DateTimeOffset? LastSeen { get; set; } = null;
 
     public string Name { get; } = c.Name;
     public string Model { get; } = c.Model;

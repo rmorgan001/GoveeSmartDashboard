@@ -8,7 +8,7 @@ public sealed class GoVeeBleService
     private readonly Dictionary<ulong, BleReading> _latest = new();
     private readonly Lock _gate = new();
 
-    public async Task<IReadOnlyList<BleReading>> ScanAsync(TimeSpan duration, CancellationToken ct)
+    public async Task<IReadOnlyList<BleReading>> ScanAsync(TimeSpan duration, LoggingService loggingService, CancellationToken ct)
     {
         void Received(BluetoothLEAdvertisementWatcher _, BluetoothLEAdvertisementReceivedEventArgs args)
         {
@@ -34,9 +34,9 @@ public sealed class GoVeeBleService
                         };
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // ignored
+                loggingService.LogMessage("E| " + ex.Message);
             }
         }
 

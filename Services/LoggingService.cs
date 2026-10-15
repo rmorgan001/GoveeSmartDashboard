@@ -13,6 +13,7 @@ public sealed class LoggingService : IDisposable
     private string? _activeFilePath;
     private bool _disposed;
     private readonly Lock _sync = new();
+    public int LogNumber;
 
     public ObservableCollection<LogEntry> Entries { get; } = [];
     public event EventHandler<string>? FilePathChanged;
@@ -21,7 +22,25 @@ public sealed class LoggingService : IDisposable
     {
         _defaultDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "GoVeeSmartDashboard", "Logs");
         Directory.CreateDirectory(_defaultDirectory);
-        LogFilePath = Path.Combine(_defaultDirectory, $"GoVeeSession{DateTime.Now:yyyy-MM-dd_HH-mm-ss-ffff}.log");
+        LogFilePath = Path.Combine(_defaultDirectory, $"GoVeeSession{DateTime.Now:yyyy-MM-dd_HH}.log");
+
+        var cutoffDate = DateTime.Now.AddDays(-14);
+        if (Directory.Exists(_defaultDirectory))
+        {
+            var dirInfo = new DirectoryInfo(_defaultDirectory);
+    
+            foreach (var file in dirInfo.GetFiles())
+            {
+                // Use LastWriteTime to check when the file was last modified
+                if (file.LastWriteTime >= cutoffDate) continue;
+                file.Delete();
+                Console.WriteLine($"Deleted: {file.Name}");
+            }
+        }
+        else
+        {
+            LogMessage($"Missing: {_defaultDirectory}");
+        }
     }
 
     public string LogFilePath { get; private set; }
@@ -50,6 +69,15 @@ public sealed class LoggingService : IDisposable
         }
         CloseWriterAsync().GetAwaiter().GetResult();
         FilePathChanged?.Invoke(this, fullPath);
+    }
+
+    public void LogMessage(string message)
+    {
+        LogNumber++;
+        var now = DateTimeOffset.Now;
+        var entry = new LogEntry(LogNumber, now, message);
+        Entries.Add(entry);
+        LogAsync(entry).GetAwaiter().GetResult();
     }
 
     public async Task LogAsync(LogEntry entry, CancellationToken cancellationToken = default)

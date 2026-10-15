@@ -350,6 +350,10 @@
                                VerticalAlignment="Center"
                                Text="{Binding StatusMessage}"
                                TextWrapping="Wrap" />
+                    <TextBlock MaxWidth="430" FontWeight="Bold" 
+                               VerticalAlignment="Center"
+                               Text="{Binding Entries.Count, StringFormat=' Count: {0}'}"
+                               TextWrapping="Wrap" />
                     <Button Padding="18,9"
                             Command="{Binding ClearLogCommand}"
                             Content="Clear Log" />
